@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hospital Searcher</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      #map {
+        height: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 0%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="floating-panel">
+      <input id="address" type="textbox" value="Seattle, WA">
+      <input id="submit" type="button" value="Enter">
+      <p id="list"></p> <!-- List of hospitals-->
+    </div>
+    <div id="map"></div>
+    <script>
+      var hospitals = "";
+      function initMap() {
+          document.getElementById("list").style.fontSize = "small";
+          document.getElementById("list").innerHTML = hospitals;
+          map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: {lat: 47.608013, lng: -122.335167}
+        });
+        var geocoder = new google.maps.Geocoder();
+        document.getElementById('submit').addEventListener('click', function() {
+          geocodeAddress(geocoder, map);
+        });
+      }
+
+      function geocodeAddress(geocoder, resultsMap) {
+        var address = document.getElementById('address').value;
+        geocoder.geocode({'address': address}, function(results, status) {
+          if (status === 'OK') {
+            var latitude = results[0].geometry.location.lat(); <!-- Get location lat and long-->
+            var longitude = results[0].geometry.location.lng();
+            target = new google.maps.LatLng(latitude, longitude);
+            infowindow = new google.maps.InfoWindow();
+            map = new google.maps.Map(
+                document.getElementById('map'), {center: target, zoom: 13});
+            var request = {
+            location: target,
+            radius: '16093.4', <!-- 10 miles in meter->
+            types: ['hospital', 'medical center'] <!-- filter by hospital and medical center->
+            };
+            service = new google.maps.places.PlacesService(map);
+            service.nearbySearch(request, callback);
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+      }
+      function createMarker(place) {
+        var marker = new google.maps.Marker({
+          map: map,
+          position: place.geometry.location
+        });
+        google.maps.event.addListener(marker, 'click', function() {
+          infowindow.setContent(place.name);
+          infowindow.open(map, this);
+        });
+      }
+      function callback(results, status) {
+        if (status == google.maps.places.PlacesServiceStatus.OK) {
+          for (var i = 0; i < results.length; i++) {
+            createMarker(results[i]);
+            var place = results[i];
+            hospitals = hospitals + place.name + "<br>";
+            document.getElementById("list").innerHTML = hospitals;
+          }
+        }
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKIk3J0E2yv3F3T-k0iX2uGvpaldE9lBc&libraries=places&callback=initMap">
+    </script>
+  </body>
+</html>
